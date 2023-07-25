@@ -1025,14 +1025,15 @@ static void set_best_clk_source(struct tegra_spi_data *tspi,
 			fpclk = pclk;
 			fin_err = err_rate;
 			fpclk_name = pclk_name;
-		}
-		clk_put(pclk);
+		} else
+			clk_put(pclk);
 	}
 
 	if (fpclk) {
 		dev_dbg(tspi->dev, "Setting clk_src %s\n",
 			fpclk_name);
 		clk_set_parent(tspi->clk, fpclk);
+		clk_put(fpclk);
 	}
 }
 
