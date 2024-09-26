@@ -3,4 +3,7 @@
 *.bin
 *.csp
 *.dsp
+*.hcd
+*.elf
+*_firmware
 ihex2fw
