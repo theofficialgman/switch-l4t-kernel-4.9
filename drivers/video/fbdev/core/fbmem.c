@@ -1113,6 +1113,10 @@ static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
 		var = info->var;
 		unlock_fb_info(info);
 
+		pr_info("[fbmem] FBIOGET_VSCREENINFO from '%s' on fb%d: xres=%u yres=%u bpp=%u pixclock=%u\n",
+			current->comm, info->node,
+			var.xres, var.yres, var.bits_per_pixel, var.pixclock);
+
 		ret = copy_to_user(argp, &var, sizeof(var)) ? -EFAULT : 0;
 		break;
 	case FBIOPUT_VSCREENINFO:
@@ -1136,6 +1140,10 @@ static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
 			return -ENODEV;
 		fix = info->fix;
 		unlock_fb_info(info);
+
+		pr_info("[fbmem] FBIOGET_FSCREENINFO from '%s' on fb%d: id='%s' line_length=%u smem_len=%u\n",
+			current->comm, info->node,
+			fix.id, fix.line_length, fix.smem_len);
 
 		ret = copy_to_user(argp, &fix, sizeof(fix)) ? -EFAULT : 0;
 		break;
