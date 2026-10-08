@@ -44,7 +44,7 @@
 #include "xhci.h"
 #include "../core/hub.h"
 
-static bool en_hcd_reinit = false;
+static bool en_hcd_reinit = true;
 module_param(en_hcd_reinit, bool, 0644);
 MODULE_PARM_DESC(en_hcd_reinit, "Enable hcd reinit when hc died");
 static void xhci_reinit_work(struct work_struct *work);
@@ -5426,9 +5426,19 @@ static void xhci_reinit_work(struct work_struct *work)
 	xhci->xhc_state |= XHCI_STATE_DYING;
 	spin_unlock_irqrestore(&xhci->lock, flags);
 
-	tegra_xusb_remove(pdev);
+	/*
+	 * Go through the driver core. Calling tegra_xusb_remove() and
+	 * tegra_xusb_probe() directly never releases the devm resources of
+	 * the first probe, so the re-probe fails with "can't request region"
+	 * and USB stays dead until reboot. remove() frees xhci (and this
+	 * work item) but doesn't cancel it, so only pdev is used from here.
+	 */
+	get_device(&pdev->dev);
+	device_release_driver(&pdev->dev);
 	usleep_range(10, 20);
-	tegra_xusb_probe(pdev);
+	if (device_attach(&pdev->dev) != 1)
+		dev_err(&pdev->dev, "re-probe after hcd_reinit failed\n");
+	put_device(&pdev->dev);
 
 	/* probe will set recovery_in_progress to false */
 }

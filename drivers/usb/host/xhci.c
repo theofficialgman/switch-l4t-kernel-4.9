@@ -2779,6 +2779,19 @@ int xhci_check_bandwidth(struct usb_hcd *hcd, struct usb_device *udev)
 		(xhci->xhc_state & XHCI_STATE_REMOVING))
 		return -ENODEV;
 
+	/*
+	 * The device is already gone (its hub was unplugged). Dropping its
+	 * endpoints with a Configure Endpoint command is pointless: the
+	 * Disable Slot that follows frees everything in the controller, and
+	 * usb_disable_device() ignores our return value. Some controllers
+	 * (Tegra X1) never complete that command for a device behind a
+	 * vanished hub, so skip it.
+	 */
+	if (udev->state == USB_STATE_NOTATTACHED) {
+		xhci_reset_bandwidth(hcd, udev);
+		return -ENODEV;
+	}
+
 	xhci_dbg(xhci, "%s called for udev %p\n", __func__, udev);
 	virt_dev = xhci->devs[udev->slot_id];
 
